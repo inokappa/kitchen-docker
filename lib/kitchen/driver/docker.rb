@@ -171,8 +171,8 @@ module Kitchen
       def parse_container_ssh_port(output)
         begin
           info = Array(::JSON.parse(output)).first
-          ports = info['NetworkSettings']['Ports']
-          ssh_port = ports['22/tcp'].detect {|port| port['HostIp'] == '0.0.0.0'}
+          ports = info['NetworkSettings']['Ports']["Tcp"]
+          ssh_port = ports['22']
           ssh_port['HostPort'].to_i
         rescue
           raise ActionFailed,
