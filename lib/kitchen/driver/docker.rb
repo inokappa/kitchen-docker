@@ -61,8 +61,8 @@ module Kitchen
         state[:image_id] = build_image(state) unless state[:image_id]
         state[:container_id] = run_container(state) unless state[:container_id]
         state[:port] = container_ssh_port(state)
-        state[:ip] = container_ssh_ip(state)
-        state[:hostname] = remote_socket? ? socket_uri.host : state[:ip]
+        state[:gwip] = container_ssh_gwip(state)
+        state[:hostname] = remote_socket? ? socket_uri.host : state[:gwip]
         wait_for_sshd(state[:hostname], :port => state[:port])
       end
 
@@ -187,7 +187,7 @@ module Kitchen
         parse_container_ssh_port(output)
       end
 
-      def parse_container_ssh_ip(output)
+      def parse_container_ssh_gwip(output)
         begin
           info = Array(::JSON.parse(output)).first
           ip = info['NetworkSettings']['Gateway']
@@ -198,10 +198,10 @@ module Kitchen
         end
       end
 
-      def container_ssh_ip(state)
+      def container_ssh_gwip(state)
         container_id = state[:container_id]
         output = docker_command("inspect #{container_id}")
-        parse_container_ssh_ip(output)
+        parse_container_ssh_gwip(output)
       end
 
       def rm_container(state)
