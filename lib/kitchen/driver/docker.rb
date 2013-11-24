@@ -60,8 +60,10 @@ module Kitchen
       def create(state)
         state[:image_id] = build_image(state) unless state[:image_id]
         state[:container_id] = run_container(state) unless state[:container_id]
-        state[:hostname] = remote_socket? ? socket_uri.host : 'localhost'
         state[:port] = container_ssh_port(state)
+        state[:ip] = container_ssh_ip(state)
+        state[:hostname] = remote_socket? ? socket_uri.host : state[:ip]
+        wait_for_sshd(state[:hostname], :port => state[:port])
       end
 
       def destroy(state)
@@ -183,6 +185,23 @@ module Kitchen
         container_id = state[:container_id]
         output = docker_command("inspect #{container_id}")
         parse_container_ssh_port(output)
+      end
+
+      def parse_container_ssh_ip(output)
+        begin
+          info = Array(::JSON.parse(output)).first
+          ip = info['NetworkSettings']['Gateway']
+          ip.to_s
+        rescue
+          raise ActionFailed,
+          'Could not parse Docker inspect output for container SSH ipaddress.'
+        end
+      end
+
+      def container_ssh_ip(state)
+        container_id = state[:container_id]
+        output = docker_command("inspect #{container_id}")
+        parse_container_ssh_ip(output)
       end
 
       def rm_container(state)
